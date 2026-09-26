@@ -151,6 +151,7 @@ def parse_detail(html: str) -> dict:
     return {
         "plot_area_m2": textutils.parse_area(pairs.get("Plocha pozemku")),
         "house_area_m2": textutils.parse_area(pairs.get("Plocha domu") or pairs.get("Úžitková plocha")),
+        "built_area_m2": textutils.parse_area(pairs.get("Zastavaná plocha")),
         "territory": pairs.get("Územie"),
         "ownership": pairs.get("Vlastníctvo"),
         "condition_label": condition,

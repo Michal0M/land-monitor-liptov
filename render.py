@@ -62,10 +62,40 @@ def util_text(utilities: str | None) -> str:
 
 
 def sort_price_per_m2(card: dict) -> float:
+    """
+    €/m²: preferuje hodnotu z portálu. Fallback: pozemok = cena / plocha pozemku; dom = cena / plocha DOMU
+    (nikdy nie / plocha pozemku - to by bolo zavádzajúce), a ak plocha domu nie je známa, nič.
+    """
     if card.get("price_per_m2"):
         return card["price_per_m2"]
-    area = card.get("plot_area_m2") or card.get("area_m2")
-    return card["price"] / area if card["price"] and area else 0
+    if not card["price"]:
+        return 0
+    if card["prop_type"] == "pozemok":
+        area = card.get("plot_area_m2") or card.get("area_m2")
+    else:
+        area = card.get("house_area_m2")
+    return card["price"] / area if area else 0
+
+
+def ppm2_label(card: dict) -> str:
+    """
+    Text s €/m² vrátane toho, k čomu sa viaže (pri dome to nie je jedno):
+      - hodnota z portálu (pri dome je to €/m² podľa plochy domu, pri pozemku podľa pozemku),
+      - inak dom: cena / plocha domu; ak plocha domu chýba, cena / plocha POZEMKU s popiskom "pozemku".
+    """
+    if not card["price"]:
+        return ""
+    fmt = lambda v: f"{v:,.2f} €/m²".replace(",", " ")
+    if card.get("price_per_m2"):
+        return fmt(card["price_per_m2"])
+    if card["prop_type"] == "pozemok":
+        area = card.get("plot_area_m2") or card.get("area_m2")
+        return fmt(card["price"] / area) if area else ""
+    if card.get("house_area_m2"):
+        return fmt(card["price"] / card["house_area_m2"]) + " domu"
+    if card.get("plot_area_m2"):
+        return fmt(card["price"] / card["plot_area_m2"]) + " pozemku"
+    return ""
 
 
 def card_html(card: dict, history: list[dict], seed_day: str | None = None) -> str:
@@ -105,12 +135,15 @@ def card_html(card: dict, history: list[dict], seed_day: str | None = None) -> s
     else:
         if card.get("house_area_m2"):
             meta.append(f'dom {fmt_m2(card["house_area_m2"])}')
+        if card.get("built_area_m2"):
+            meta.append(f'zastavaná {fmt_m2(card["built_area_m2"])}')
         if card.get("plot_area_m2"):
             meta.append(f'pozemok {fmt_m2(card["plot_area_m2"])}')
-        if not card.get("house_area_m2") and not card.get("plot_area_m2") and card.get("area_m2"):
+        if not (card.get("house_area_m2") or card.get("built_area_m2") or card.get("plot_area_m2")) and card.get("area_m2"):
             meta.append(fmt_m2(card["area_m2"]))
-    if ppm2:
-        meta.append(f"{ppm2:,.2f} €/m²".replace(",", " "))
+    label = ppm2_label(card)
+    if label:
+        meta.append(label)
     util = util_text(card.get("utilities"))
     util_html = f'<div class="card-meta">Siete: {esc(util)}</div>' if util else ""
     area_sort = card.get("plot_area_m2") or card.get("area_m2") or 0

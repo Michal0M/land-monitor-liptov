@@ -55,9 +55,11 @@ def build_embed(item: dict) -> dict:
     elif l["prop_type"] == "dom":
         if l.get("house_area_m2"):
             facts.append(f"dom {fmt_m2(l['house_area_m2'])}")
+        if l.get("built_area_m2"):
+            facts.append(f"zastavaná {fmt_m2(l['built_area_m2'])}")
         if l.get("plot_area_m2"):
             facts.append(f"pozemok {fmt_m2(l['plot_area_m2'])}")
-        if not l.get("house_area_m2") and not l.get("plot_area_m2") and l.get("area_m2"):
+        if not (l.get("house_area_m2") or l.get("built_area_m2") or l.get("plot_area_m2")) and l.get("area_m2"):
             facts.append(fmt_m2(l["area_m2"]))
     if l.get("price_per_m2"):
         facts.append(f"{l['price_per_m2']:,.2f} €/m²".replace(",", " "))

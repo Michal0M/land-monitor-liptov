@@ -43,7 +43,7 @@ def apply_detail(conn, module, raw: dict, budget: dict) -> None:
     """Doplní `raw` o údaje z detailu (plocha pozemku, siete, celý popis). Cache v DB, max DETAIL_MAX_PER_RUN za beh."""
     existing = db.get_listing(conn, db.make_id(module.SOURCE_NAME, raw["portal_id"]))
     if existing:  # prenes uloženú cache, aby ju výpis (ktorý tieto polia nemá) neprepísal
-        for key in ("plot_area_m2", "house_area_m2", "territory", "ownership", "condition_label", "utilities",
+        for key in ("plot_area_m2", "house_area_m2", "built_area_m2", "territory", "ownership", "condition_label", "utilities",
                     "detail_checked_at", "detail_version"):
             raw[key] = existing.get(key)
         if len(existing.get("description_raw") or "") > len(raw.get("description_raw") or ""):
@@ -63,7 +63,7 @@ def apply_detail(conn, module, raw: dict, budget: dict) -> None:
             print(f"[{module.SOURCE_NAME}] ďalšie detaily sa v tomto behu nesťahujú")
         budget["failed"] += 1
         return
-    for key in ("plot_area_m2", "house_area_m2", "territory", "ownership", "condition_label", "utilities"):
+    for key in ("plot_area_m2", "house_area_m2", "built_area_m2", "territory", "ownership", "condition_label", "utilities"):
         raw[key] = detail.get(key)
     if len(detail.get("description") or "") > len(raw.get("description_raw") or ""):
         raw["description_raw"] = detail["description"]

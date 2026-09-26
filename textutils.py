@@ -80,7 +80,7 @@ def detect_flags(title: str | None, description: str | None, prop_type: str) -> 
     """
     text = fold(f"{title or ''}. {description or ''}")
     flags = []
-    if _SHARE.search(text):
+    if prop_type == "pozemok" and _SHARE.search(text):   # pri domoch "podiel" = bežné spoluvlastníctvo, nie urbár
         flags.append("share")
     if prop_type == "pozemok" and _SPLIT.search(text):
         flags.append("split")

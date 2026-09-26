@@ -31,6 +31,9 @@ class TextutilsTests(unittest.TestCase):
         self.assertIn("split", f)
         self.assertNotIn("split", tu.detect_flags("Dom", "Dispozícia rozdelená na izby, geometrický plán", "dom"))
         self.assertIn("half_house", tu.detect_flags("Na predaj polovica rodinného domu", "", "dom"))
+        # dom s "podielom" (spoluvlastníctvo polovice domu) NIE je urbár
+        self.assertEqual(tu.detect_flags("Polovica rodinného domu", "predaj spoluvlastníckeho podielu 1/2", "dom"),
+                         ["half_house"])
         self.assertEqual(tu.detect_flags("Pozemok", "Rovinatý slnečný pozemok", "pozemok"), [])
         # reálny text: 1/2 podiel na prístupovom pozemku NIE je predaj podielu
         real = "Kupujúci s predajom získava aj 1/2 podiel na prístupovom pozemku o rozlohe 207 m2."
@@ -84,6 +87,13 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(d["house_area_m2"], 150.0)
         self.assertEqual(d["plot_area_m2"], 1060.0)
         self.assertEqual(d["condition_label"], "Pôvodný stav")
+        self.assertIsNone(d["built_area_m2"])          # 'Zastavaná plocha:' bez hodnoty
+        # reálny dom HALO reality (26.9.2026): bez plochy domu, len pozemok 164 m² a zastavaná 72 m²
+        halo = ns.parse_detail(fx.DETAIL_HOUSE.replace("<p data-test-id=\"text\">Plocha domu:</p><p data-test-id=\"text\">150 m²</p>", "")
+                               .replace("1 060 m²", "164 m²").replace("Zastavaná plocha:</p>", "Zastavaná plocha:</p><p data-test-id=\"text\">72 m²</p>"))
+        self.assertIsNone(halo["house_area_m2"])
+        self.assertEqual(halo["built_area_m2"], 72.0)
+        self.assertEqual(halo["plot_area_m2"], 164.0)
 
 
 def raw(pid="a", prop="pozemok", obec="Liptovská Lúžna", price=10000.0, area=500.0, title="Pozemok", desc="popis"):
@@ -197,6 +207,32 @@ class RenderTests(unittest.TestCase):
         self.assertIn("land-liptov-favs", html)
         self.assertIn("fav-btn", html)
         self.assertEqual(html.count('class="obec-btn'), 4)   # všetky + 3 obce
+
+    def test_ppm2_label_says_what_it_refers_to(self):
+        house = dict(raw("h", prop="dom", price=69900.0, area=None))
+        house.update({"price_per_m2": None, "house_area_m2": None, "plot_area_m2": 164.0})
+        self.assertEqual(render.ppm2_label(house), "426.22 €/m² pozemku")     # HALO: bez plochy domu -> jasný popisok
+        self.assertEqual(render.sort_price_per_m2(house), 0)                  # do radenia sa nemieša s €/m² domu
+        house["house_area_m2"] = 100.0
+        self.assertEqual(render.ppm2_label(house), "699.00 €/m² domu")
+        house["price_per_m2"] = 575.0                                         # hodnota z portálu má prednosť
+        self.assertEqual(render.ppm2_label(house), "575.00 €/m²")
+        plot = dict(raw("p", prop="pozemok", price=10000.0, area=500.0)); plot.update({"price_per_m2": None, "plot_area_m2": None})
+        self.assertEqual(render.ppm2_label(plot), "20.00 €/m²")
+        self.assertEqual(render.ppm2_label(dict(plot, price=None)), "")
+
+    def test_migration_adds_built_area(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "old.db")
+            import sqlite3
+            conn = sqlite3.connect(path)
+            conn.executescript(db.SCHEMA.replace("    built_area_m2     REAL,                  -- 'Zastavaná plocha' z detailu (pôdorys domu)\n", ""))
+            cols = {r[1] for r in conn.execute("PRAGMA table_info(listings)")}
+            self.assertNotIn("built_area_m2", cols)
+            conn.close()
+            db.init_db(path)
+            with db.connect(path) as conn:
+                self.assertIn("built_area_m2", {r["name"] for r in conn.execute("PRAGMA table_info(listings)")})
 
     def test_empty_db(self):
         html = self.build([])

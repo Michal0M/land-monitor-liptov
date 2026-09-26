@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS listings (
     price_per_m2      REAL,
     plot_area_m2      REAL,                  -- 'Plocha pozemku' z detailu
     house_area_m2     REAL,                  -- 'Plocha domu' z detailu
+    built_area_m2     REAL,                  -- 'Zastavaná plocha' z detailu (pôdorys domu)
     territory         TEXT,                  -- Intravilán / Extravilán (detail)
     ownership         TEXT,
     condition_label   TEXT,                  -- stav domu z detailu (Pôvodný stav, Novostavba...)
@@ -66,9 +67,13 @@ CREATE INDEX IF NOT EXISTS idx_listings_status ON listings(status);
 """
 
 _COLUMNS = ["source", "portal_id", "url", "title", "description_raw", "prop_type", "subtype", "obec", "location",
-            "area_m2", "price", "price_note", "price_per_m2", "plot_area_m2", "house_area_m2", "territory",
+            "area_m2", "price", "price_note", "price_per_m2", "plot_area_m2", "house_area_m2", "built_area_m2", "territory",
             "ownership", "condition_label", "utilities", "flags", "main_photo_url", "detail_checked_at",
             "detail_version"]
+
+
+# Stĺpce pridané po prvom nasadení - ALTER TABLE pre už existujúce DB súbory. Bezpečné spúšťať opakovane.
+_MIGRATIONS = [("built_area_m2", "REAL")]
 
 
 def now_iso() -> str:
@@ -90,6 +95,10 @@ def connect(db_path: str):
 def init_db(db_path: str) -> None:
     with connect(db_path) as conn:
         conn.executescript(SCHEMA)
+        existing = {row["name"] for row in conn.execute("PRAGMA table_info(listings)")}
+        for column, ctype in _MIGRATIONS:
+            if column not in existing:
+                conn.execute(f"ALTER TABLE listings ADD COLUMN {column} {ctype}")
 
 
 def make_id(source: str, portal_id: str) -> str:

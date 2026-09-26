@@ -32,7 +32,7 @@ MAX_PAGES_PER_QUERY = 5
 
 DETAIL_REFRESH_DAYS = 14         # detail (plocha pozemku, siete, celý popis) sa obnovuje raz za N dní
 DETAIL_MAX_PER_RUN = 60
-DETAIL_VERSION = 1               # zvýš, ak detail začne poskytovať nové údaje - cache sa jednorazovo obnoví
+DETAIL_VERSION = 2               # zvýš, ak detail začne poskytovať nové údaje - cache sa jednorazovo obnoví
 
 NEW_BADGE_DAYS = 3               # "NOVÉ" badge; pri úplne prvom behu sa nezobrazuje
 

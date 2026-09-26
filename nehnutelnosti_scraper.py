@@ -10,7 +10,7 @@ Overené 26.9.2026 v prehliadači:
   - Poradie <p data-test-id="text"> v karte: lokalita ("..., okres X"), druh ("Lesy", "Rekreačný pozemok",
     "Rodinný dom"), plocha (nie vždy), cena ("28 100 €" alebo "Cena dohodou"), cena/m² (nie vždy), popis, realitka.
   - Obec bez inzerátov (napr. pozemky Liptovská Osada) vráti platnú stránku s nulou kariet - to NIE JE chyba.
-    Platnosť stránky overujeme cez <h1> ("Pozemky na predaj, Liptovská Lúžna").
+    Platnosť stránky overujeme cez <h1> alebo <title> (prázdna stránka <h1> nemá - overené 26.9.2026 v prvom nasadení).
   - Detail: dvojice `<p>Plocha pozemku:</p><p>726 m²</p>` (aj Plocha domu, Územie, Voda, Elektrina...), celý popis
     v `<p id="detail-description">`, stav domu v meta description ("Dom, Predaj, Obec, Pôvodný stav, 150 m², ...").
 """
@@ -45,9 +45,17 @@ def _card_for(anchors):
 
 
 def page_is_for(html: str, obec_label: str) -> bool:
-    """True, ak je to skutočne výpis pre danú obec (a nie presmerovanie na zoznam za celé Slovensko)."""
-    h1 = BeautifulSoup(html, "html.parser").find("h1")
-    return bool(h1) and textutils.fold(obec_label) in textutils.fold(h1.get_text(" ", strip=True))
+    """
+    True, ak je to skutočne výpis pre danú obec (a nie presmerovanie na zoznam za celé Slovensko).
+    Kontroluje sa <h1> ("Pozemky na predaj, Liptovská Lúžna") ALEBO <title> ("Pozemky Liptovská Osada - ponuka ...").
+    Titulok je nutný, lebo stránka bez inzerátov (napr. pozemky Liptovská Osada) <h1> nemá.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    needle = textutils.fold(obec_label)
+    h1 = soup.find("h1")
+    if h1 and needle in textutils.fold(h1.get_text(" ", strip=True)):
+        return True
+    return bool(soup.title and needle in textutils.fold(soup.title.get_text(" ", strip=True)))
 
 
 def parse_page(html: str, prop_type: str, obec_label: str) -> list[dict]:

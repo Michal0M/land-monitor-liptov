@@ -35,7 +35,9 @@ HOUSE_DUPLOC = card("Ju8WZpgHGL1", "Rodinný dom v centre obce /841 m2/ Liptovsk
                      "Reality Alpia", "Domy Liptovské Revúce Predaj"])
 
 PAGE_LAND_LL = page("Pozemky na predaj, Liptovská Lúžna", [LAND_LL])
-PAGE_LAND_OSADA_EMPTY = page("Pozemky na predaj, Liptovská Osada", [])
+# reálna prázdna stránka: BEZ <h1>, obec je len v titulku
+PAGE_LAND_OSADA_EMPTY = ("<html><head><title>Pozemky Liptovská Osada - ponuka pozemkov na predaj | Nehnutelnosti.sk</title></head>"
+                         "<body><main><p>Žiadne výsledky</p></main></body></html>")
 PAGE_HOUSES_LL = page("Domy na predaj, Liptovská Lúžna", [HOUSE_NEGOTIABLE, HOUSE_NOAREA])
 PAGE_GENERIC_REDIRECT = page("Stavebné pozemky na predaj, Slovensko", [LAND_LL])
 

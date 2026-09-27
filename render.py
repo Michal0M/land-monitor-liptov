@@ -250,10 +250,10 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   <div class="subtitle">Aktualizované: %%UPDATED%% · %%OBCE%% · predaj</div>
   %%RUN_STATUS%%
   <div class="controls">
+    <button class="filter-btn" data-filter="fav" data-label="★ Obľúbené">★ Obľúbené (0)</button>
     <button class="filter-btn active" data-filter="all" data-label="Všetky aktívne">Všetky aktívne (%%N_ALL%%)</button>
     <button class="filter-btn" data-filter="pozemok" data-label="Pozemky">Pozemky (%%N_POZEMOK%%)</button>
     <button class="filter-btn" data-filter="dom" data-label="Domy / chaty">Domy / chaty (%%N_DOM%%)</button>
-    <button class="filter-btn" data-filter="fav" data-label="★ Obľúbené">★ Obľúbené (0)</button>
     <button class="filter-btn" data-filter="removed" data-label="Stiahnuté">Stiahnuté (%%N_REMOVED%%)</button>
   </div>
   <div class="controls">
